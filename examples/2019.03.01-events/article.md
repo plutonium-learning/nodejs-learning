@@ -1,4 +1,6 @@
 # 事件触发器
+> 文章内所有代码在GITHUB上可以找到: [nodejs-learning](https://github.com/plutonium-learning/nodejs-learning)
+ 
 Node.js的核心API大多构建于惯用的异步事件驱动架构，其中某些类型的对象(被称为触发器, Emitter)会触发命名事件来调用函数(又称监听器，Listener)。
 所有触发器对象都是EventEmitter的实例。这些对象都有一个eventEmitter.on()函数，用于将一个或多个函数绑定到命名时间上。通常，事件命名用驼峰式。如下面示例[代码](sample1.js)：
 ```javascript
@@ -43,7 +45,7 @@ myEventEmitter.emit('event', 'Conik');
 Conik
 false
 {}
-````
+```
 我么将监听器函数改成:
 ```javascript
 function (name) {
@@ -201,6 +203,36 @@ RangeError: Maximum call stack size exceeded
 ### EventEmitter.defaultMaxListeners
 默认情况下，每个事件可以注册最多 10 个监听器。 可以使用 emitter.setMaxListeners(n) 方法改变单个 EventEmitter 实例的限制。 可以使用 EventEmitter.defaultMaxListeners 属性改变所有 EventEmitter 实例的默认值（可见这个影响是全局的使用当谨慎！）。EventEmitter 实例可以添加超过限制的监听器，但是会向 stderr 输出跟踪警告，表明检测到可能的内存泄漏。
 
+### emitter.rawListeners(eventName)
+返回 eventName 事件的监听器数组的拷贝，包括封装的监听器（例如由 .once() 创建的）。
+需要注意这个方法是v9.4.0后新增的，在较低版本使用会报错。
+代码：
+```javascript
+const EventEmitter = require('events');
+
+const emitter = new EventEmitter();
+emitter.once('log', () => console.log('只记录一次'));
+
+// 返回一个数组，包含了一个封装了 `listener` 方法的监听器。
+const listeners = emitter.rawListeners('log');
+const logFnWrapper = listeners[0];
+
+// 打印 “只记录一次”，但不会解绑 `once` 事件。
+logFnWrapper.listener();
+
+// 打印 “只记录一次”，且移除监听器。
+logFnWrapper();
+
+emitter.on('log', () => console.log('持续地记录'));
+// 返回一个数组，只包含 `.on()` 绑定的监听器。
+const newListeners = emitter.rawListeners('log');
+
+// 打印两次 “持续地记录”。
+newListeners[0]();
+emitter.emit('log');
+```
+
+
 更多关于EventEmitter类的详细信息可参考官方API: https://nodejs.org/api/events.html。
 - emitter.addListener(eventName, listener)
   emitter.on(eventName, listener) 的别名。
@@ -227,7 +259,3 @@ RangeError: Maximum call stack size exceeded
 - emitter.removeListener(eventName, listener)  
 - emitter.setMaxListeners(n)
 - emitter.rawListeners(eventName)
-        
-
-
-
